@@ -1,6 +1,7 @@
 ﻿using BilibiliDM_PluginFramework;
 using System.Text.RegularExpressions;
 using System;
+using Chinese;
 
 namespace Re_TTSCat.Data
 {
@@ -14,12 +15,28 @@ namespace Re_TTSCat.Data
                     return true;
                 case 1:
                     var RegKeyWordArray_black = Vars.CurrentConf.BlackList.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach(string RegKeyWord in RegKeyWordArray_black)
+                    foreach (string RegKeyWord in RegKeyWordArray_black)
                     {
+                        // 如果内容有部分符合黑名单规则，就返回 false
                         Regex r = new Regex(RegKeyWord);
                         Match m = r.Match(content);
                         if (m.Success) return false;
                         if (content.Contains(RegKeyWord)) return false;
+                        try
+                        {
+                            // 将文字转为拼音
+                            var pContent = Pinyin.GetString(content, PinyinFormat.WithoutTone);
+                            var pRegKeyWord = Pinyin.GetString(RegKeyWord, PinyinFormat.WithoutTone);
+                            // 如果拼音有部分符合黑名单规则，就返回 false
+                            r = new Regex(pRegKeyWord);
+                            m = r.Match(pContent);
+                            if (m.Success) return false;
+                            if (pContent.Contains(pRegKeyWord)) return false;
+                        }
+                        catch (System.Exception e)
+                        {
+                            Bridge.ALog("转换拼音时出现错误：" + e.Message);
+                        }
                     }
                     //return Vars.CurrentConf.BlackList.Contains(content) ? false : true;
                     return true;
